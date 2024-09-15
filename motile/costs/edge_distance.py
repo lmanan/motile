@@ -37,10 +37,12 @@ class EdgeDistance(Costs):
         position_attribute: str | tuple[str, ...],
         weight: float = 1.0,
         constant: float = 0.0,
+        scale_factor = 1.0
     ) -> None:
         self.position_attribute = position_attribute
         self.weight = Weight(weight)
         self.constant = Weight(constant)
+        self.scale_factor = scale_factor
 
     def apply(self, solver: Solver) -> None:
         edge_variables = solver.get_variables(EdgeSelected)
@@ -49,7 +51,7 @@ class EdgeDistance(Costs):
             pos_u = self.__get_node_position(solver.graph, u)
             pos_v = self.__get_node_position(solver.graph, v)
 
-            feature = np.linalg.norm(pos_u - pos_v)
+            feature = np.linalg.norm(pos_u - pos_v)/self.scale_factor #TODO
 
             solver.add_variable_cost(index, feature, self.weight)
             solver.add_variable_cost(index, 1.0, self.constant)

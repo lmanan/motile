@@ -9,7 +9,6 @@ from .weight import Weight
 if TYPE_CHECKING:
     from motile.solver import Solver
 
-
 class Disappear(Costs):
     """Costs for :class:`motile.variables.NodeDisappear` variables.
 
@@ -24,8 +23,10 @@ class Disappear(Costs):
             at no cost.
     """
 
-    def __init__(self, constant: float, ignore_attribute: str | None = None) -> None:
+    def __init__(self, weight: float = 1, attribute = None, constant =0, ignore_attribute: str | None = None) -> None:
+        self.weight = Weight(weight)
         self.constant = Weight(constant)
+        self.attribute = attribute
         self.ignore_attribute = ignore_attribute
 
     def apply(self, solver: Solver) -> None:
@@ -35,4 +36,6 @@ class Disappear(Costs):
             if self.ignore_attribute is not None:
                 if solver.graph.nodes[node].get(self.ignore_attribute, False):
                     continue
+            if self.attribute is not None:
+                solver.add_variable_cost(index, solver.graph.nodes[node][self.attribute], self.weight)
             solver.add_variable_cost(index, 1.0, self.constant)

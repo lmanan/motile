@@ -72,6 +72,12 @@ class TrackGraph:
             data: all properties associated to the added edge.
         """
         self.edges[edge_id] = data
+        u, v = edge_id
+        if type(v) is tuple: # hyper edge
+            (m, n) = v
+            self.prev_edges[m].append(edge_id)
+            self.prev_edges[n].append(edge_id)
+            self.next_edges[u].append(edge_id)
 
     def add_from_nx_graph(self, nx_graph: networkx.DiGraph) -> None:
         """Add nodes/edges from ``nx_graph`` to this TrackGraph.
@@ -94,6 +100,7 @@ class TrackGraph:
                 will be updating the previously set values.
         """
         # add all regular nodes (all but ones representing hyperedges)
+
         for node, data in nx_graph.nodes.items():
             if self.frame_attribute in data:
                 if node not in self.nodes:
@@ -171,30 +178,31 @@ class TrackGraph:
                 a hyperedge.
 
         Returns:
-            a tuple representing the hyperedge the given ``nx_node`` represented. (It
-            will be a tuple with one entry per involved time point, listing all nodes at
+            a tuple representing the hyperedge the given ``nx_node`` represented. 
+            (It will be a tuple with one entry per involved time point, listing all nodes at
             that time point.)
         """
         assert self._is_hyperedge_nx_node(nx_graph, hyperedge_node)
-
         in_nodes = list(nx_graph.predecessors(hyperedge_node))
         out_nodes = list(nx_graph.successors(hyperedge_node))
         nx_nodes = in_nodes + out_nodes
+            
 
         frameset = {
             nx_graph.nodes[nx_node][self.frame_attribute] for nx_node in nx_nodes
         }
         frames = list(sorted(frameset))
 
-        edge_tuple = tuple(
-            tuple(
-                node
-                for node in nx_nodes
-                if nx_graph.nodes[node][self.frame_attribute] == frame
-            )
-            for frame in frames
-        )
-
+        # TODO
+        #edge_tuple = tuple(
+        #    tuple(
+        #        node
+        #        for node in nx_nodes
+        #        if nx_graph.nodes[node][self.frame_attribute] == frame
+        #    )
+        #    for frame in frames
+        #)
+        edge_tuple = tuple((tuple((nx_nodes[0],)), tuple((nx_nodes[1], nx_nodes[2])))) #TODO
         return edge_tuple, in_nodes, out_nodes
 
     def get_frames(self) -> tuple[int | None, int | None]:

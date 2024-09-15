@@ -27,7 +27,7 @@ class NodeSelection(Costs):
     """
 
     def __init__(
-        self, weight: float, attribute: str = "costs", constant: float = 0.0
+        self, weight: float, attribute: str = None, constant: float = 0.0
     ) -> None:
         self.weight = Weight(weight)
         self.constant = Weight(constant)
@@ -37,7 +37,9 @@ class NodeSelection(Costs):
         node_variables = solver.get_variables(NodeSelected)
 
         for node, index in node_variables.items():
-            solver.add_variable_cost(
-                index, solver.graph.nodes[node][self.attribute], self.weight
-            )
+            if self.attribute is not None:
+                solver.add_variable_cost(
+                    index, solver.graph.nodes[node][self.attribute], self.weight
+                )
             solver.add_variable_cost(index, 1.0, self.constant)
+

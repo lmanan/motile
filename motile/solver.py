@@ -256,6 +256,10 @@ class Solver:
             self._weights_changed = False
 
         return self._costs
+    
+    def get_costs_instances(self) -> Mapping:
+        # TODO
+        return self._costs_instances
 
     def _add_variables(self, cls: type[V]) -> None:
         logger.info("Adding %s variables...", cls.__name__)
