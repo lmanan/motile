@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 import structsvm as ssvm
 
-from .variables import EdgeSelected, NodeSelected
+from .variables import EdgeSelected, NodeAppear, NodeDisappear, NodeSelected
 
 if TYPE_CHECKING:
     from motile.solver import Solver
@@ -17,6 +17,8 @@ def fit_weights(
     regularizer_weight: float,
     max_iterations: int | None,
     eps: float,
+    ground_truth: np.ndarray,
+    mask: np.ndarray,
 ) -> np.ndarray:
     """Return the optimal weights for the given solver.
 
@@ -36,6 +38,10 @@ def fit_weights(
             Maximum number of gradient steps in the structured SVM.
         eps (float):
             Convergence threshold.
+        ground_truth (np.ndarray):
+            Set to 1 when True, else 0.
+        mask (np.ndarray):
+            Set to 1 when annotation is available, else 0.
 
     Returns:
         np.ndarray:
@@ -43,30 +49,50 @@ def fit_weights(
     """
     features = solver.features.to_ndarray()
 
-    mask = np.zeros((solver.num_variables,), dtype=np.float32)
-    ground_truth = np.zeros((solver.num_variables,), dtype=np.float32)
-
     for node, index in solver.get_variables(NodeSelected).items():
         gt = solver.graph.nodes[node].get(gt_attribute, None)
         if gt is not None:
-            mask[index] = 1.0
-            ground_truth[index] = gt
+            pass
+        else:
+            features[index] = 0  # otherwise remove entire row
 
     for edge, index in solver.get_variables(EdgeSelected).items():
-        gt = solver.graph.edges[edge].get(gt_attribute, None)
-        if gt is not None:
-            mask[index] = 1.0
-            ground_truth[index] = gt
+        u, v = edge
+        if isinstance(v, tuple):
+            (u,) = u
+            (v1, v2) = v
+            gt = solver.graph.edges[edge].get(gt_attribute, None)
+            if gt is not None:
+                pass
+            else:
+                features[index] = 0  # since we do not know about edge features
+        else:
+            gt = solver.graph.edges[edge].get(gt_attribute, None)
+            if gt is not None:
+                pass
+            else:
+                features[index] = 0  # since we do not know about edge features
+
+    for node, index in solver.get_variables(NodeAppear).items():
+        if "feature_mask_appear" in solver.graph.nodes[node]:
+            if solver.graph.nodes["feature_mask_appear"] == 1.0:
+                features[index] = 0.0
+
+    for node, index in solver.get_variables(NodeDisappear).items():
+        if "feature_mask_appear" in solver.graph.nodes[node]:
+            if solver.graph.nodes["feature_mask_disappear"] == 1.0:
+                features[index] = 0.0
 
     loss = ssvm.SoftMarginLoss(
         solver.constraints,
-        features.T,  # TODO: fix in ssvm
+        features.T,  # note, now 8 x N
         ground_truth,
-        ssvm.HammingCosts(ground_truth, mask),
+        ssvm.HammingCosts(ground_truth, mask, solver.num_variables),
     )
+
     bundle_method = ssvm.BundleMethod(
         loss.value_and_gradient,
-        dims=features.shape[1],
+        dims=features.shape[1],  # 8 =position and attrackt
         regularizer_weight=regularizer_weight,
         eps=eps,
     )

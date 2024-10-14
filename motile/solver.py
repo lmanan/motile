@@ -215,6 +215,8 @@ class Solver:
     def fit_weights(
         self,
         gt_attribute: str,
+        ground_truth: np.ndarray,
+        mask: np.ndarray,
         regularizer_weight: float = 0.1,
         max_iterations: int = 1000,
         eps: float = 1e-6,
@@ -230,9 +232,20 @@ class Solver:
                 Node/edge attribute that marks the ground truth for fitting.
                 `gt_attribute` is expected to be set to:
 
-                - ``1`` for objects labaled as ground truth.
+                - ``1`` for objects labeled as ground truth.
                 - ``0`` for objects explicitly labeled as not part of the ground truth.
                 - ``None`` or not set for unlabeled objects.
+
+            ground_truth: 
+                Numpy array of the size of the number of variables.
+                Set to 1 when the edge_selected/node_selected/node_appear/node_disappear
+                is true, else false.
+
+            mask:
+                Numpy array of the size of the number of variables.
+                It is set to 1 wherever annotation is available
+                irrespective of whether it was a positive or negative
+                annotation.
 
             regularizer_weight:
                 The weight of the quadratic regularizer.
@@ -244,7 +257,13 @@ class Solver:
                 Convergence threshold.
         """
         optimal_weights = fit_weights(
-            self, gt_attribute, regularizer_weight, max_iterations, eps
+            self,
+            gt_attribute=gt_attribute,
+            regularizer_weight=regularizer_weight,
+            max_iterations=max_iterations,
+            eps=eps,
+            ground_truth=ground_truth,
+            mask=mask,
         )
         self.weights.from_ndarray(optimal_weights)
 
@@ -256,7 +275,7 @@ class Solver:
             self._weights_changed = False
 
         return self._costs
-    
+
     def get_costs_instances(self) -> Mapping:
         # TODO
         return self._costs_instances
