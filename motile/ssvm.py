@@ -79,7 +79,7 @@ def fit_weights(
                 features[index] = 0.0
 
     for node, index in solver.get_variables(NodeDisappear).items():
-        if "feature_mask_appear" in solver.graph.nodes[node]:
+        if "feature_mask_disappear" in solver.graph.nodes[node]:
             if solver.graph.nodes["feature_mask_disappear"] == 1.0:
                 features[index] = 0.0
 
