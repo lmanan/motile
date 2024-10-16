@@ -48,13 +48,17 @@ def fit_weights(
             The optimal weights for the given solver.
     """
     features = solver.features.to_ndarray()
-
+    print("+" * 10)
+    print(f"Originally {np.count_nonzero(np.sum(features, axis=1))}.")
     for node, index in solver.get_variables(NodeSelected).items():
         gt = solver.graph.nodes[node].get(gt_attribute, None)
         if gt is not None:
             pass
         else:
             features[index] = 0  # otherwise remove entire row
+
+    print("+" * 10)
+    print(f"After node selected,  {np.count_nonzero(np.sum(features, axis=1))}.")
 
     for edge, index in solver.get_variables(EdgeSelected).items():
         u, v = edge
@@ -73,15 +77,24 @@ def fit_weights(
             else:
                 features[index] = 0  # since we do not know about edge features
 
+    print("+" * 10)
+    print(f"After edge selected  {np.count_nonzero(np.sum(features, axis=1))}.")
+
     for node, index in solver.get_variables(NodeAppear).items():
         if "feature_mask_appear" in solver.graph.nodes[node]:
-            if solver.graph.nodes["feature_mask_appear"] == 1.0:
+            if solver.graph.nodes[node]["feature_mask_appear"] == 1.0:
                 features[index] = 0.0
+
+    print("+" * 10)
+    print(f"After node appear  {np.count_nonzero(np.sum(features, axis=1))}.")
 
     for node, index in solver.get_variables(NodeDisappear).items():
         if "feature_mask_disappear" in solver.graph.nodes[node]:
-            if solver.graph.nodes["feature_mask_disappear"] == 1.0:
+            if solver.graph.nodes[node]["feature_mask_disappear"] == 1.0:
                 features[index] = 0.0
+
+    print("+" * 10)
+    print(f"After node disappear  {np.count_nonzero(np.sum(features, axis=1))}.")
 
     loss = ssvm.SoftMarginLoss(
         solver.constraints,
