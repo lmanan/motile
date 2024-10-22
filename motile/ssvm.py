@@ -5,8 +5,6 @@ from typing import TYPE_CHECKING
 import numpy as np
 import structsvm as ssvm
 
-from .variables import EdgeSelected, NodeAppear, NodeDisappear, NodeSelected
-
 if TYPE_CHECKING:
     from motile.solver import Solver
 
@@ -48,27 +46,8 @@ def fit_weights(
             The optimal weights for the given solver.
     """
     features = solver.features.to_ndarray()
-    for node, index in solver.get_variables(NodeSelected).items():
-        if mask[index] == 0.0:
-            features[index] = (
-                0  # we lack information about whether this node is selected.
-            )
-
-    for edge, index in solver.get_variables(EdgeSelected).items():
-        if mask[index] == 0.0:
-            features[index] = (
-                0  # we lack information about whether this edge is selected.
-            )
-
-    for node, index in solver.get_variables(NodeAppear).items():
-        if mask[index] == 0.0:  # we lack information about whether this node appeared
-            features[index] = 0
-
-    for node, index in solver.get_variables(NodeDisappear).items():
-        if (
-            mask[index] == 0.0
-        ):  # we lack information about whether this node disappeared
-            features[index] = 0
+    mask = mask.astype(np.bool_)
+    features[~mask] = 0
 
     loss = ssvm.SoftMarginLoss(
         solver.constraints,
