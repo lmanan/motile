@@ -217,6 +217,7 @@ class Solver:
         gt_attribute: str,
         ground_truth: np.ndarray,
         mask: np.ndarray,
+        fit_subset_weights: bool = False,
         regularizer_weight: float = 0.1,
         max_iterations: int = 1000,
         eps: float = 1e-6,
@@ -236,7 +237,7 @@ class Solver:
                 - ``0`` for objects explicitly labeled as not part of the ground truth.
                 - ``None`` or not set for unlabeled objects.
 
-            ground_truth: 
+            ground_truth:
                 Numpy array of the size of the number of variables.
                 Set to 1 when the edge_selected/node_selected/node_appear/node_disappear
                 is true, else false.
@@ -246,6 +247,10 @@ class Solver:
                 It is set to 1 wherever annotation is available
                 irrespective of whether it was a positive or negative
                 annotation.
+
+            fit_subset_weights: bool = False
+                If set to True, then appearance and disappearance
+                weights are not fit.
 
             regularizer_weight:
                 The weight of the quadratic regularizer.
@@ -264,6 +269,7 @@ class Solver:
             eps=eps,
             ground_truth=ground_truth,
             mask=mask,
+            fit_subset_weights=fit_subset_weights,
         )
         self.weights.from_ndarray(optimal_weights)
 

@@ -17,6 +17,7 @@ def fit_weights(
     eps: float,
     ground_truth: np.ndarray,
     mask: np.ndarray,
+    fit_subset_weights: bool,
 ) -> np.ndarray:
     """Return the optimal weights for the given solver.
 
@@ -40,6 +41,9 @@ def fit_weights(
             Set to 1 when True, else 0.
         mask (np.ndarray):
             Set to 1 when annotation is available, else 0.
+        fit_subset_weights (bool):
+            If set to True, then appearance and disappearance weights are not
+            fit.
 
     Returns:
         np.ndarray:
@@ -56,11 +60,29 @@ def fit_weights(
         ssvm.HammingCosts(ground_truth, mask, solver.num_variables),
     )
 
-    bundle_method = ssvm.BundleMethod(
-        loss.value_and_gradient,
-        dims=features.shape[1],  # 8 =position and attrackt
-        regularizer_weight=regularizer_weight,
-        eps=eps,
-    )
+    def masked_loss(w):
+        all_w = np.concatenate(
+            (w, np.array([0, 1, 0, 1])), axis=0
+        )  # this assumes appear/disappear are the last four weights, adjust accordingly
+        value, gradient = loss.value_and_gradient(all_w)
+        return (
+            value,
+            gradient[:-4],
+        )  # this assumes appear/disappear are the last four weights, adjust accordingly
+
+    if fit_subset_weights:
+        bundle_method = ssvm.BundleMethod(
+            masked_loss,
+            dims=features.shape[1] - 4,  # 8 = ignore appearance and disappearance
+            regularizer_weight=regularizer_weight,
+            eps=eps,
+        )
+    else:
+        bundle_method = ssvm.BundleMethod(
+            loss.value_and_gradient,
+            dims=features.shape[1],  # 8 =position and attrackt
+            regularizer_weight=regularizer_weight,
+            eps=eps,
+        )
 
     return bundle_method.optimize(max_iterations)
